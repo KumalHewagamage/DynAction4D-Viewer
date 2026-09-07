@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import os
+import json
 
 from data_processing import (
     get_datasets,
@@ -11,7 +12,7 @@ from data_processing import (
 from html_renderer import generate_player_html
 
 # --- Configuration ---
-st.set_page_config(page_title="DynAction4D Viewer", layout="wide")
+st.set_page_config(page_title="CL4D-DynAction4D", layout="wide")
 st.markdown(
     """
     <style>
@@ -39,7 +40,7 @@ st.markdown(
 ROOT_DATA_DIR = "data"
 
 # --- Main App UI ---
-st.title("🏃‍♂️ Dynamic 3D Action Viewer")
+st.title("🏃‍♂️ CL4D-DynAction4D")
 
 datasets = get_datasets(ROOT_DATA_DIR)
 if not datasets:
@@ -66,8 +67,21 @@ with col_fps:
         "PCD Playback FPS", min_value=1, max_value=60, value=15
     )
 
+
 seq_pcd_dir = os.path.join(current_dataset_dir, "pcd", selected_seq)
 video_path = os.path.join(current_dataset_dir, "video", f"{selected_seq}.mp4")
+json_path = os.path.join(current_dataset_dir, "pcd", selected_seq, "report.json")
+
+# Extract Description
+description = "No description available."
+if os.path.exists(json_path):
+    try:
+        with open(json_path, "r") as f:
+            report_data = json.load(f)
+            full_desc = report_data.get("description", "")
+            description = full_desc.split(".")[0].strip() + "."
+    except Exception:
+        pass
 
 # Process Data
 with st.spinner("Extracting frames and processing point clouds..."):
@@ -76,7 +90,8 @@ with st.spinner("Extracting frames and processing point clouds..."):
 
 # Render Custom Component
 html_content = generate_player_html(
-    pcd_frames_data, vid_frames_data, target_fps, range_x, range_y, range_z
+    pcd_frames_data, vid_frames_data, target_fps, range_x, range_y, range_z, description
 )
 
-components.html(html_content, height=750)
+
+components.html(html_content, height=800)

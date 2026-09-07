@@ -8,6 +8,7 @@ HTML_TEMPLATE = """
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1a202c; background: transparent; padding: 5px;}
+        .caption { background: #ffffff; padding: 14px 20px; border-radius: 8px; margin-bottom: 12px; color: #4a5568; font-size: 15px; border-left: 4px solid #2b6cb0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-style: italic; font-weight: 500; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;}
         .controls { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
         button { padding: 8px 24px; cursor: pointer; border: none; border-radius: 6px; background: #2b6cb0; color: white; font-weight: 600; font-size: 14px; transition: all 0.2s ease; }
         button:hover { background: #2c5282; box-shadow: 0 2px 4px rgba(43, 108, 176, 0.2); }
@@ -21,6 +22,7 @@ HTML_TEMPLATE = """
     </style>
 </head>
 <body>
+    <div class="caption">"__DESCRIPTION__"</div>
     <div class="controls">
         <button id="play-btn">Play</button>
         <input type="range" id="timeline" min="0" step="1" value="0">
@@ -29,11 +31,11 @@ HTML_TEMPLATE = """
 
     <div class="container">
         <div class="panel">
-            <h3>Video Reference</h3>
+            <h3>RGB Video</h3>
             <img id="vid-img" src="" alt="Video Frame">
         </div>
         <div class="panel">
-            <h3>Interactive Point Cloud</h3>
+            <h3>Dynamic Point Cloud</h3>
             <div id="pcd-div" style="width: 100%; height: 100%;"></div>
         </div>
     </div>
@@ -61,7 +63,7 @@ HTML_TEMPLATE = """
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff); 
 
-        const gridHelper = new THREE.GridHelper(5, 25, 0xe2e8f0, 0xf7fafc);
+        const gridHelper = new THREE.GridHelper(5, 25, 0x444444, 0x888888);
         gridHelper.position.y = 0; 
         scene.add(gridHelper);
 
@@ -165,11 +167,18 @@ HTML_TEMPLATE = """
 """
 
 
-def generate_player_html(pcd_frames, vid_frames, target_fps, range_x, range_y, range_z):
+def generate_player_html(
+    pcd_frames, vid_frames, target_fps, range_x, range_y, range_z, description
+):
     html = HTML_TEMPLATE.replace("__PCD_FRAMES__", json.dumps(pcd_frames))
     html = html.replace("__VID_FRAMES__", json.dumps(vid_frames))
     html = html.replace("__FPS__", str(target_fps))
     html = html.replace("__RANGE_X__", json.dumps(range_x))
     html = html.replace("__RANGE_Y__", json.dumps(range_y))
     html = html.replace("__RANGE_Z__", json.dumps(range_z))
+
+    # Escape quotes to avoid breaking the JSON/HTML
+    safe_desc = description.replace('"', '\\"').replace("'", "\\'")
+    html = html.replace("__DESCRIPTION__", safe_desc)
+
     return html
