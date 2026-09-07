@@ -63,7 +63,8 @@ HTML_TEMPLATE = """
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff); 
 
-        const gridHelper = new THREE.GridHelper(5, 25, 0x444444, 0x888888);
+        const gridSize = Math.max(rangeX[1] - rangeX[0], rangeZ[1] - rangeZ[0]);
+        const gridHelper = new THREE.GridHelper(gridSize, 25, 0x444444, 0x888888);
         gridHelper.position.y = 0; 
         scene.add(gridHelper);
 
@@ -76,19 +77,25 @@ HTML_TEMPLATE = """
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        const cx = (rangeX[0] + rangeX[1]) / 2;
+        const cx = 0;
         const cy = (rangeY[0] + rangeY[1]) / 2;
-        const cz = (rangeZ[0] + rangeZ[1]) / 2;
-        controls.target.set(cx, cy, cz); 
-        camera.position.set(cx, cy + 1.5, cz + 3);
+        const cz = 0;
+        const cameraDistance = Math.max(gridSize * 1.5, 2);
+        controls.target.set(cx, cy, cz);
+        camera.position.set(cx, cy + cameraDistance * 0.5, cz + cameraDistance);
 
         const geometry = new THREE.BufferGeometry();
         const material = new THREE.PointsMaterial({ size: 0.03, vertexColors: true });
         const points = new THREE.Points(geometry, material);
         scene.add(points);
 
-        function parseRGB(rgbStr) {
-            const parts = rgbStr.substring(4, rgbStr.length - 1).split(',');
+        function parseColor(color) {
+            if (color.startsWith('#')) {
+                const value = parseInt(color.slice(1), 16);
+                return [(value >> 16 & 255) / 255, (value >> 8 & 255) / 255, (value & 255) / 255];
+            }
+
+            const parts = color.substring(4, color.length - 1).split(',');
             return [parseInt(parts[0]) / 255, parseInt(parts[1]) / 255, parseInt(parts[2]) / 255];
         }
 
@@ -104,7 +111,7 @@ HTML_TEMPLATE = """
                 positions[i*3+1] = frame.y[i]; 
                 positions[i*3+2] = frame.z[i];
 
-                const c = parseRGB(frame.colors[i]);
+                const c = parseColor(frame.colors[i]);
                 colors[i*3] = c[0];
                 colors[i*3+1] = c[1];
                 colors[i*3+2] = c[2];

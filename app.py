@@ -3,8 +3,8 @@ import streamlit.components.v1 as components
 import os
 import json
 
+from config import DATASETS
 from data_processing import (
-    get_datasets,
     get_sequences,
     process_sequence_data,
     extract_video_frames,
@@ -37,23 +37,25 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-ROOT_DATA_DIR = "data"
-
 # --- Main App UI ---
 st.title("🏃‍♂️ CL4D-DynAction4D")
 
-datasets = get_datasets(ROOT_DATA_DIR)
-if not datasets:
-    st.error(f"No dataset directories found in '{ROOT_DATA_DIR}/'.")
+if not DATASETS:
+    st.error("No datasets are configured.")
     st.stop()
+
+dataset_names = [dataset["name"] for dataset in DATASETS]
 
 # Layout styling for the controls
 col_data, col_seq, col_fps = st.columns([2, 2, 1])
 
 with col_data:
-    selected_dataset = st.selectbox("Select Dataset", datasets)
+    selected_dataset_name = st.selectbox("Select Dataset", dataset_names)
 
-current_dataset_dir = os.path.join(ROOT_DATA_DIR, selected_dataset)
+selected_dataset = next(
+    dataset for dataset in DATASETS if dataset["name"] == selected_dataset_name
+)
+current_dataset_dir = selected_dataset["path"]
 sequences = get_sequences(current_dataset_dir)
 
 if not sequences:
@@ -85,7 +87,11 @@ if os.path.exists(json_path):
 
 # Process Data
 with st.spinner("Extracting frames and processing point clouds..."):
-    pcd_frames_data, range_x, range_y, range_z = process_sequence_data(seq_pcd_dir)
+    pcd_frames_data, range_x, range_y, range_z = process_sequence_data(
+        seq_pcd_dir,
+        selected_dataset["color"] if selected_dataset["overide_color"] else None,
+        selected_dataset["actor_label_prefixes"],
+    )
     vid_frames_data = extract_video_frames(video_path)
 
 # Render Custom Component
